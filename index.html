@@ -873,9 +873,20 @@
                             
                             const category = categories.find(c => c.id === categoryId);
                             if (category && category.cashbacks[cardId]) {
+                                // Проверка на максимальное количество отмеченных категорий
+                                const card = cards.find(c => c.id === cardId);
+                                const checkedCount = countCheckedCategories(cardId);
+                                
+                                if (e.target.checked && checkedCount >= card.maxCategories) {
+                                    alert(`Для карты "${card.name}" можно выбрать максимум ${card.maxCategories} категорий`);
+                                    e.target.checked = false;
+                                    return;
+                                }
+                                
                                 category.cashbacks[cardId].checked = e.target.checked;
                                 saveData();
                                 updateCardCounter(cardId);
+                                updateMaxSpend(categoryId); // Добавлено обновление расчета при изменении чекбокса
                                 updateProgress();
                             }
                         });
@@ -913,7 +924,8 @@
                     if (category.cashbacks[card.id] && category.cashbacks[card.id].checked) {
                         const percent = parseFloat(category.cashbacks[card.id].percent || 0);
                         if (!isNaN(percent) && percent > 0) {
-                            total += Math.round(card.limit / (percent / 100));
+                            // Исправленная формула расчета
+                            total += Math.round((card.limit * 100) / percent);
                         }
                     }
                 });
@@ -925,7 +937,8 @@
             function updateMaxSpend(categoryId) {
                 const row = Array.from(cashbackTable.querySelectorAll('tbody tr')).find(row => {
                     const cell = row.querySelector('.category-col');
-                    return cell && cell.querySelector('.edit-btn').dataset.categoryIndex === categories.findIndex(c => c.id === categoryId).toString();
+                    const editBtn = cell.querySelector('.edit-btn');
+                    return editBtn && parseInt(editBtn.dataset.categoryIndex) === categories.findIndex(c => c.id === categoryId);
                 });
                 
                 if (row) {
