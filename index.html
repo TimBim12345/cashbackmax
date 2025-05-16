@@ -744,10 +744,10 @@
         function renderTable() {
             // Clear existing table content (except header row)
             const headerRow = cashbackTable.querySelector('thead tr');
-            headerRow.innerHTML = 
+            headerRow.innerHTML = `
                 <th class="category-col">Категория</th>
                 <th class="max-spend-col">Макс. расход, ₽</th>
-            ;
+            `;
             
             // Add card headers
             cards.forEach((card, index) => {
@@ -760,14 +760,14 @@
                 const checkedCount = countCheckedCategories(card.id);
                 const counterClass = checkedCount === card.maxCategories ? 'text-green-500' : 'text-yellow-500';
                 
-                cardHeader.innerHTML = 
+                cardHeader.innerHTML = `
                     <div class="card-header">
                         <div class="text-truncate" title="${card.name}">${card.name}</div>
                         <div class="limit">${card.limit}₽</div>
                         <div class="card-counter ${counterClass}">${checkedCount}/${card.maxCategories}</div>
                         <i class="fas fa-edit edit-btn" data-card-index="${index}"></i>
                     </div>
-                ;
+                `;
                 
                 headerRow.appendChild(cardHeader);
                 
@@ -799,12 +799,12 @@
                 const categoryCell = document.createElement('td');
                 categoryCell.className = 'category-col';
                 categoryCell.title = category.name;
-                categoryCell.innerHTML = 
+                categoryCell.innerHTML = `
                     <div class="flex justify-between items-center">
                         <span class="text-truncate">${category.name}</span>
                         <i class="fas fa-edit edit-btn" data-category-index="${catIndex}"></i>
                     </div>
-                ;
+                `;
                 row.appendChild(categoryCell);
                 
                 categoryCell.querySelector('.edit-btn').addEventListener('click', () => {
@@ -950,7 +950,7 @@
             const currentChecked = countCheckedCategories(cardId);
             
             if (checked && currentChecked >= card.maxCategories) {
-                alert(Достигнуто максимальное количество категорий для карты (${card.maxCategories}));
+                alert(`Достигнуто максимальное количество категорий для карты (${card.maxCategories})`);
                 checkbox.checked = false;
                 return;
             }
@@ -994,15 +994,15 @@
             if (!card) return;
             
             const cardIndex = cards.findIndex(c => c.id === cardId);
-            const headerCell = cashbackTable.querySelector(thead th[data-card-id="${cardId}"]);
+            const headerCell = cashbackTable.querySelector(`thead th[data-card-id="${cardId}"]`);
             if (!headerCell) return;
             
             const counter = headerCell.querySelector('.card-counter');
             if (!counter) return;
             
             const checkedCount = countCheckedCategories(cardId);
-            counter.textContent = ${checkedCount}/${card.maxCategories};
-            counter.className = card-counter ${checkedCount === card.maxCategories ? 'text-green-500' : 'text-yellow-500'};
+            counter.textContent = `${checkedCount}/${card.maxCategories}`;
+            counter.className = `card-counter ${checkedCount === card.maxCategories ? 'text-green-500' : 'text-yellow-500'}`;
         }
         
         // Update progress bar
@@ -1011,9 +1011,9 @@
             const totalCount = categories.length;
             const percentage = totalCount > 0 ? Math.round((filledCount / totalCount) * 100) : 0;
             
-            progressFill.style.width = ${percentage}%;
-            progressText.textContent = Заполнено: ${filledCount} из ${totalCount} категорий (${percentage}%);
-            filledCategoriesText.textContent = filledCount > 0 ? ${filledCount} ${getWordForm(filledCount, ['категория', 'категории', 'категорий'])} : '';
+            progressFill.style.width = `${percentage}%`;
+            progressText.textContent = `Заполнено: ${filledCount} из ${totalCount} категорий (${percentage}%)`;
+            filledCategoriesText.textContent = filledCount > 0 ? `${filledCount} ${getWordForm(filledCount, ['категория', 'категории', 'категорий'])}` : '';
         }
         
         // Get correct word form based on number
@@ -1212,7 +1212,7 @@
         function deleteCategory() {
             if (editingCategoryIndex >= 0) {
                 showConfirmModal(
-                    Вы уверены, что хотите удалить категорию "${categories[editingCategoryIndex].name}"?,
+                    `Вы уверены, что хотите удалить категорию "${categories[editingCategoryIndex].name}"?`,
                     () => {
                         categories.splice(editingCategoryIndex, 1);
                         saveData();
