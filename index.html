@@ -578,806 +578,761 @@
     </div>
     
     <script>
-        // Data structure
-        let cards = [];
-        let categories = [];
-        
-        // DOM Elements
-        const cashbackTable = document.getElementById('cashbackTable');
-        const addCardBtn = document.getElementById('addCardBtn');
-        const addCategoryBtn = document.getElementById('addCategoryBtn');
-        const clearBtn = document.getElementById('clearBtn');
-        const filterSelect = document.getElementById('filterSelect');
-        const themeToggle = document.getElementById('themeToggle');
-        const progressFill = document.getElementById('progressFill');
-        const progressText = document.getElementById('progressText');
-        const filledCategoriesText = document.getElementById('filledCategoriesText');
-        
-        // Modal Elements
-        const cardModal = document.getElementById('cardModal');
-        const cardModalTitle = document.getElementById('cardModalTitle');
-        const cardName = document.getElementById('cardName');
-        const cardLimit = document.getElementById('cardLimit');
-        const cardMaxCategories = document.getElementById('cardMaxCategories');
-        const saveCardBtn = document.getElementById('saveCardBtn');
-        const cancelCardBtn = document.getElementById('cancelCardBtn');
-        const closeCardModal = document.getElementById('closeCardModal');
-        
-        const categoryModal = document.getElementById('categoryModal');
-        const categoryModalTitle = document.getElementById('categoryModalTitle');
-        const categoryName = document.getElementById('categoryName');
-        const saveCategoryBtn = document.getElementById('saveCategoryBtn');
-        const cancelCategoryBtn = document.getElementById('cancelCategoryBtn');
-        const deleteCategoryBtn = document.getElementById('deleteCategoryBtn');
-        const closeCategoryModal = document.getElementById('closeCategoryModal');
-        
-        const confirmModal = document.getElementById('confirmModal');
-        const confirmText = document.getElementById('confirmText');
-        const confirmBtn = document.getElementById('confirmBtn');
-        const cancelConfirmBtn = document.getElementById('cancelConfirmBtn');
-        const closeConfirmModal = document.getElementById('closeConfirmModal');
-        
-        // State variables
-        let editingCardIndex = -1;
-        let editingCategoryIndex = -1;
-        let confirmCallback = null;
-        let draggedColumn = null;
-        
-        // Default category list
-        const defaultCategories = [
-            'АЗС', 'Аптеки', 'Авия', 'Аренда авто', 'Бытовые услуги', 'Гостиницы', 'Детские товары', 
-            'Дикси доставка', 'Дом ремонт', 'ЖД билеты', 'За все', 'Зоотовары', 'Искусство музеи', 
-            'Кафе и рестораны', 'Кино', 'Книги', 'Комунальные', 'Конценрты', 'Косметика', 'Красота', 
-            'Магазины МТС', 'Маркетплейсы', 'Медицина', 'Музыкальные магазины', 'Образование', 
-            'Одежда обувь', 'Онлайн', 'Оптика', 'Оплата связи МТС', 'Перекресток', 'Платные дороги', 
-            'Продукты', 'Развлечение', 'Рестораны', 'Спорт', 'Фитнес', 'Спорттовары', 'Сувениры', 
-            'Супермаркеты в городе', 'Шопинг в городе', 'Такси', 'Театр и кино', 'Техника', 
-            'Транспорт', 'Фото', 'Фастфуд', 'Хобби', 'Цветы', 'Цифровые товары', 'ЖКХ'
-        ];
-        
-        // Initialize the app
-        function init() {
-            loadData();
-            initEventListeners();
-            renderTable();
-            updateProgress();
-            applyTheme();
-        }
-        
-        // Initialize event listeners
-        function initEventListeners() {
-            addCardBtn.addEventListener('click', () => showCardModal());
-            addCategoryBtn.addEventListener('click', () => showCategoryModal());
-            clearBtn.addEventListener('click', confirmClearCashback);
+        // Дождемся полной загрузки DOM перед инициализацией приложения
+        document.addEventListener('DOMContentLoaded', function() {
+            // Data structure
+            let cards = [];
+            let categories = [];
             
-            saveCardBtn.addEventListener('click', saveCard);
-            cancelCardBtn.addEventListener('click', hideCardModal);
-            closeCardModal.addEventListener('click', hideCardModal);
+            // DOM Elements
+            const cashbackTable = document.getElementById('cashbackTable');
+            const addCardBtn = document.getElementById('addCardBtn');
+            const addCategoryBtn = document.getElementById('addCategoryBtn');
+            const clearBtn = document.getElementById('clearBtn');
+            const filterSelect = document.getElementById('filterSelect');
+            const themeToggle = document.getElementById('themeToggle');
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
+            const filledCategoriesText = document.getElementById('filledCategoriesText');
             
-            saveCategoryBtn.addEventListener('click', saveCategory);
-            cancelCategoryBtn.addEventListener('click', hideCategoryModal);
-            closeCategoryModal?.addEventListener('click', hideCategoryModal);
-            deleteCategoryBtn.addEventListener('click', deleteCategory);
+            // Modal Elements
+            const cardModal = document.getElementById('cardModal');
+            const cardModalTitle = document.getElementById('cardModalTitle');
+            const cardName = document.getElementById('cardName');
+            const cardLimit = document.getElementById('cardLimit');
+            const cardMaxCategories = document.getElementById('cardMaxCategories');
+            const saveCardBtn = document.getElementById('saveCardBtn');
+            const cancelCardBtn = document.getElementById('cancelCardBtn');
+            const closeCardModal = document.getElementById('closeCardModal');
             
-            confirmBtn.addEventListener('click', executeConfirmAction);
-            cancelConfirmBtn.addEventListener('click', hideConfirmModal);
-            closeConfirmModal.addEventListener('click', hideConfirmModal);
+            const categoryModal = document.getElementById('categoryModal');
+            const categoryModalTitle = document.getElementById('categoryModalTitle');
+            const categoryName = document.getElementById('categoryName');
+            const saveCategoryBtn = document.getElementById('saveCategoryBtn');
+            const cancelCategoryBtn = document.getElementById('cancelCategoryBtn');
+            const deleteCategoryBtn = document.getElementById('deleteCategoryBtn');
+            const closeCategoryModal = document.getElementById('closeCategoryModal');
             
-            filterSelect.addEventListener('change', filterCategories);
-            themeToggle.addEventListener('change', toggleTheme);
+            const confirmModal = document.getElementById('confirmModal');
+            const confirmText = document.getElementById('confirmText');
+            const confirmBtn = document.getElementById('confirmBtn');
+            const cancelConfirmBtn = document.getElementById('cancelConfirmBtn');
+            const closeConfirmModal = document.getElementById('closeConfirmModal');
             
-            // Close modals when clicking outside
-            document.addEventListener('click', (e) => {
-                if (e.target === cardModal) hideCardModal();
-                if (e.target === categoryModal) hideCategoryModal();
-                if (e.target === confirmModal) hideConfirmModal();
-            });
+            // State variables
+            let editingCardIndex = -1;
+            let editingCategoryIndex = -1;
+            let confirmCallback = null;
+            let draggedColumn = null;
             
-            // Prevent closing modals when clicking inside
-            document.querySelectorAll('.modal').forEach(modal => {
-                modal.addEventListener('click', (e) => {
-                    e.stopPropagation();
+            // Default category list
+            const defaultCategories = [
+                'АЗС', 'Аптеки', 'Авия', 'Аренда авто', 'Бытовые услуги', 'Гостиницы', 'Детские товары', 
+                'Дикси доставка', 'Дом ремонт', 'ЖД билеты', 'За все', 'Зоотовары', 'Искусство музеи', 
+                'Кафе и рестораны', 'Кино', 'Книги', 'Комунальные', 'Конценрты', 'Косметика', 'Красота', 
+                'Магазины МТС', 'Маркетплейсы', 'Медицина', 'Музыкальные магазины', 'Образование', 
+                'Одежда обувь', 'Онлайн', 'Оптика', 'Оплата связи МТС', 'Перекресток', 'Платные дороги', 
+                'Продукты', 'Развлечение', 'Рестораны', 'Спорт', 'Фитнес', 'Спорттовары', 'Сувениры', 
+                'Супермаркеты в городе', 'Шопинг в городе', 'Такси', 'Театр и кино', 'Техника', 
+                'Транспорт', 'Фото', 'Фастфуд', 'Хобби', 'Цветы', 'Цифровые товары', 'ЖКХ'
+            ];
+            
+            // Initialize the app
+            function init() {
+                loadData();
+                initEventListeners();
+                renderTable();
+                updateProgress();
+                applyTheme();
+            }
+            
+            // Initialize event listeners
+            function initEventListeners() {
+                addCardBtn.addEventListener('click', () => showCardModal());
+                addCategoryBtn.addEventListener('click', () => showCategoryModal());
+                clearBtn.addEventListener('click', confirmClearCashback);
+                
+                saveCardBtn.addEventListener('click', saveCard);
+                cancelCardBtn.addEventListener('click', hideCardModal);
+                closeCardModal.addEventListener('click', hideCardModal);
+                
+                saveCategoryBtn.addEventListener('click', saveCategory);
+                cancelCategoryBtn.addEventListener('click', hideCategoryModal);
+                closeCategoryModal?.addEventListener('click', hideCategoryModal);
+                deleteCategoryBtn.addEventListener('click', deleteCategory);
+                
+                confirmBtn.addEventListener('click', executeConfirmAction);
+                cancelConfirmBtn.addEventListener('click', hideConfirmModal);
+                closeConfirmModal.addEventListener('click', hideConfirmModal);
+                
+                filterSelect.addEventListener('change', filterCategories);
+                themeToggle.addEventListener('change', toggleTheme);
+                
+                // Close modals when clicking outside
+                document.addEventListener('click', (e) => {
+                    if (e.target === cardModal) hideCardModal();
+                    if (e.target === categoryModal) hideCategoryModal();
+                    if (e.target === confirmModal) hideConfirmModal();
                 });
-            });
-        }
-        
-        // Load data from localStorage
-        function loadData() {
-            try {
-                const savedCards = localStorage.getItem('cashbackCards');
-                const savedCategories = localStorage.getItem('cashbackCategories');
                 
-                cards = savedCards ? JSON.parse(savedCards) : [
-                    { id: 1, name: 'Карта 1', limit: 5000, maxCategories: 5 }
-                ];
-                
-                if (savedCategories) {
-                    categories = JSON.parse(savedCategories);
-                } else {
-                    // Initialize with default categories
+                // Prevent closing modals when clicking inside
+                document.querySelectorAll('.modal').forEach(modal => {
+                    modal.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                    });
+                });
+            }
+            
+            // Load data from localStorage
+            function loadData() {
+                try {
+                    const savedCards = localStorage.getItem('cashbackCards');
+                    const savedCategories = localStorage.getItem('cashbackCategories');
+                    
+                    cards = savedCards ? JSON.parse(savedCards) : [
+                        { id: 1, name: 'Карта 1', limit: 5000, maxCategories: 5 }
+                    ];
+                    
+                    if (savedCategories) {
+                        categories = JSON.parse(savedCategories);
+                    } else {
+                        // Initialize with default categories
+                        categories = defaultCategories.map((name, index) => ({
+                            id: index + 1,
+                            name: name,
+                            cashbacks: {}
+                        }));
+                    }
+                    
+                    // Ensure each category has proper cashback structure
+                    categories.forEach(category => {
+                        if (!category.cashbacks) {
+                            category.cashbacks = {};
+                        }
+                        
+                        // Make sure all cards are represented in cashbacks
+                        cards.forEach(card => {
+                            if (category.cashbacks[card.id] === undefined) {
+                                category.cashbacks[card.id] = {
+                                    percent: '',
+                                    checked: false
+                                };
+                            }
+                        });
+                    });
+                } catch (error) {
+                    console.error('Error loading data:', error);
+                    cards = [{ id: 1, name: 'Карта 1', limit: 5000, maxCategories: 5 }];
                     categories = defaultCategories.map((name, index) => ({
                         id: index + 1,
                         name: name,
-                        cashbacks: {}
+                        cashbacks: { '1': { percent: '', checked: false } }
                     }));
                 }
+            }
+            
+            // Save data to localStorage
+            function saveData() {
+                try {
+                    localStorage.setItem('cashbackCards', JSON.stringify(cards));
+                    localStorage.setItem('cashbackCategories', JSON.stringify(categories));
+                } catch (error) {
+                    console.error('Error saving data:', error);
+                    alert('Ошибка при сохранении данных. Попробуйте очистить кэш браузера.');
+                }
+            }
+            
+            // Render the table
+            function renderTable() {
+                // Clear existing table content (except header row)
+                const headerRow = cashbackTable.querySelector('thead tr');
+                headerRow.innerHTML = `
+                    <th class="category-col">Категория</th>
+                    <th class="max-spend-col">Макс. расход, ₽</th>
+                `;
                 
-                // Ensure each category has proper cashback structure
-                categories.forEach(category => {
-                    if (!category.cashbacks) {
-                        category.cashbacks = {};
-                    }
+                // Add card headers
+                cards.forEach((card, index) => {
+                    const cardHeader = document.createElement('th');
+                    cardHeader.className = 'card-cell draggable';
+                    cardHeader.dataset.cardId = card.id;
+                    cardHeader.dataset.cardIndex = index;
+                    cardHeader.draggable = true;
                     
-                    // Make sure all cards are represented in cashbacks
-                    cards.forEach(card => {
-                        if (category.cashbacks[card.id] === undefined) {
-                            category.cashbacks[card.id] = {
-                                percent: '',
-                                checked: false
-                            };
-                        }
+                    const checkedCount = countCheckedCategories(card.id);
+                    const counterClass = checkedCount === card.maxCategories ? 'text-green-500' : 'text-yellow-500';
+                    
+                    cardHeader.innerHTML = `
+                        <div class="card-header">
+                            <div class="text-truncate" title="${card.name}">${card.name}</div>
+                            <div class="limit">${card.limit}₽</div>
+                            <div class="card-counter ${counterClass}">${checkedCount}/${card.maxCategories}</div>
+                            <i class="fas fa-edit edit-btn" data-card-index="${index}"></i>
+                        </div>
+                    `;
+                    
+                    headerRow.appendChild(cardHeader);
+                    
+                    // Add drag and drop event listeners
+                    cardHeader.addEventListener('dragstart', handleDragStart);
+                    cardHeader.addEventListener('dragover', handleDragOver);
+                    cardHeader.addEventListener('dragenter', handleDragEnter);
+                    cardHeader.addEventListener('dragleave', handleDragLeave);
+                    cardHeader.addEventListener('drop', handleDrop);
+                    cardHeader.addEventListener('dragend', handleDragEnd);
+                    
+                    // Add edit button event listener
+                    cardHeader.querySelector('.edit-btn').addEventListener('click', (e) => {
+                        const cardIndex = parseInt(e.target.dataset.cardIndex);
+                        showCardModal(cardIndex);
+                        e.stopPropagation(); // Prevent triggering drag start
                     });
                 });
-            } catch (error) {
-                console.error('Error loading data:', error);
-                cards = [{ id: 1, name: 'Карта 1', limit: 5000, maxCategories: 5 }];
-                categories = defaultCategories.map((name, index) => ({
-                    id: index + 1,
-                    name: name,
-                    cashbacks: { '1': { percent: '', checked: false } }
-                }));
-            }
-        }
-        
-        // Save data to localStorage
-        function saveData() {
-            try {
-                localStorage.setItem('cashbackCards', JSON.stringify(cards));
-                localStorage.setItem('cashbackCategories', JSON.stringify(categories));
-            } catch (error) {
-                console.error('Error saving data:', error);
-                alert('Ошибка при сохранении данных. Попробуйте очистить кэш браузера.');
-            }
-        }
-        
-        // Render the table
-        function renderTable() {
-            // Clear existing table content (except header row)
-            const headerRow = cashbackTable.querySelector('thead tr');
-            headerRow.innerHTML = `
-                <th class="category-col">Категория</th>
-                <th class="max-spend-col">Макс. расход, ₽</th>
-            `;
-            
-            // Add card headers
-            cards.forEach((card, index) => {
-                const cardHeader = document.createElement('th');
-                cardHeader.className = 'card-cell draggable';
-                cardHeader.dataset.cardId = card.id;
-                cardHeader.dataset.cardIndex = index;
-                cardHeader.draggable = true;
                 
-                const checkedCount = countCheckedCategories(card.id);
-                const counterClass = checkedCount === card.maxCategories ? 'text-green-500' : 'text-yellow-500';
+                // Clear table body
+                const tbody = cashbackTable.querySelector('tbody');
+                tbody.innerHTML = '';
                 
-                cardHeader.innerHTML = `
-                    <div class="card-header">
-                        <div class="text-truncate" title="${card.name}">${card.name}</div>
-                        <div class="limit">${card.limit}₽</div>
-                        <div class="card-counter ${counterClass}">${checkedCount}/${card.maxCategories}</div>
-                        <i class="fas fa-edit edit-btn" data-card-index="${index}"></i>
-                    </div>
-                `;
-                
-                headerRow.appendChild(cardHeader);
-                
-                // Add drag and drop event listeners
-                cardHeader.addEventListener('dragstart', handleDragStart);
-                cardHeader.addEventListener('dragover', handleDragOver);
-                cardHeader.addEventListener('dragenter', handleDragEnter);
-                cardHeader.addEventListener('dragleave', handleDragLeave);
-                cardHeader.addEventListener('drop', handleDrop);
-                cardHeader.addEventListener('dragend', handleDragEnd);
-                
-                // Add edit button event listener
-                cardHeader.querySelector('.edit-btn').addEventListener('click', (e) => {
-                    const cardIndex = parseInt(e.target.dataset.cardIndex);
-                    showCardModal(cardIndex);
-                    e.stopPropagation(); // Prevent triggering drag start
+                // Add category rows
+                categories.forEach((category, catIndex) => {
+                    const row = document.createElement('tr');
+                    
+                    // Category name cell
+                    const categoryCell = document.createElement('td');
+                    categoryCell.className = 'category-col';
+                    categoryCell.title = category.name;
+                    categoryCell.innerHTML = `
+                        <div class="flex justify-between items-center">
+                            <span class="text-truncate">${category.name}</span>
+                            <i class="fas fa-edit edit-btn" data-category-index="${catIndex}"></i>
+                        </div>
+                    `;
+                    row.appendChild(categoryCell);
+                    
+                    categoryCell.querySelector('.edit-btn').addEventListener('click', () => {
+                        showCategoryModal(catIndex);
+                    });
+                    
+                    // Max spend cell
+                    const maxSpendCell = document.createElement('td');
+                    maxSpendCell.className = 'max-spend-col';
+                    maxSpendCell.textContent = calculateTotalMaxSpend(category.id);
+                    row.appendChild(maxSpendCell);
+                    
+                    // Card cells
+                    cards.forEach(card => {
+                        const cashback = category.cashbacks[card.id] || { percent: '', checked: false };
+                        
+                        const cell = document.createElement('td');
+                        cell.className = 'card-cell';
+                        
+                        const cellDiv = document.createElement('div');
+                        cellDiv.className = 'card-input-container';
+                        
+                        const input = document.createElement('input');
+                        input.type = 'text';
+                        input.className = 'percent-input';
+                        input.value = cashback.percent;
+                        input.placeholder = '0%';
+                        input.dataset.categoryId = category.id;
+                        input.dataset.cardId = card.id;
+                        
+                        const checkbox = document.createElement('input');
+                        checkbox.type = 'checkbox';
+                        checkbox.className = 'category-checkbox';
+                        checkbox.checked = cashback.checked;
+                        checkbox.dataset.categoryId = category.id;
+                        checkbox.dataset.cardId = card.id;
+                        
+                        cellDiv.appendChild(input);
+                        cellDiv.appendChild(checkbox);
+                        cell.appendChild(cellDiv);
+                        row.appendChild(cell);
+                        
+                        // Add event listeners
+                        input.addEventListener('input', (e) => {
+                            const value = e.target.value.replace(/[^0-9.]/g, '');
+                            e.target.value = value;
+                            
+                            const categoryId = parseInt(e.target.dataset.categoryId);
+                            const cardId = parseInt(e.target.dataset.cardId);
+                            
+                            const category = categories.find(c => c.id === categoryId);
+                            if (category && category.cashbacks[cardId]) {
+                                category.cashbacks[cardId].percent = value;
+                                saveData();
+                                updateCellStyle(e.target);
+                                updateMaxSpend(categoryId);
+                                updateProgress();
+                            }
+                        });
+                        
+                        checkbox.addEventListener('change', (e) => {
+                            const categoryId = parseInt(e.target.dataset.categoryId);
+                            const cardId = parseInt(e.target.dataset.cardId);
+                            
+                            const category = categories.find(c => c.id === categoryId);
+                            if (category && category.cashbacks[cardId]) {
+                                category.cashbacks[cardId].checked = e.target.checked;
+                                saveData();
+                                updateCardCounter(cardId);
+                                updateProgress();
+                            }
+                        });
+                        
+                        // Apply styles based on value
+                        updateCellStyle(input);
+                    });
+                    
+                    tbody.appendChild(row);
                 });
-            });
+            }
             
-            // Clear table body
-            const tbody = cashbackTable.querySelector('tbody');
-            tbody.innerHTML = '';
+            // Count checked categories for a card
+            function countCheckedCategories(cardId) {
+                return categories.filter(category => 
+                    category.cashbacks[cardId] && category.cashbacks[cardId].checked
+                ).length;
+            }
             
-            // Add category rows
-            categories.forEach((category, catIndex) => {
-                const row = document.createElement('tr');
+            // Count filled categories (with at least one checked card)
+            function countFilledCategories() {
+                return categories.filter(category => 
+                    Object.values(category.cashbacks).some(cb => cb.checked)
+                ).length;
+            }
+            
+            // Calculate total max spend for a category
+            function calculateTotalMaxSpend(categoryId) {
+                const category = categories.find(c => c.id === categoryId);
+                if (!category || !category.cashbacks) return '—';
                 
-                // Category name cell
-                const categoryCell = document.createElement('td');
-                categoryCell.className = 'category-col';
-                categoryCell.title = category.name;
-                categoryCell.innerHTML = `
-                    <div class="flex justify-between items-center">
-                        <span class="text-truncate">${category.name}</span>
-                        <i class="fas fa-edit edit-btn" data-category-index="${catIndex}"></i>
-                    </div>
-                `;
-                row.appendChild(categoryCell);
+                let total = 0;
                 
-                categoryCell.querySelector('.edit-btn').addEventListener('click', () => {
-                    showCategoryModal(catIndex);
-                });
-                
-                // Max spend cell
-                const maxSpendCell = document.createElement('td');
-                maxSpendCell.className = 'max-spend-col';
-                maxSpendCell.textContent = calculateTotalMaxSpend(category.id);
-                row.appendChild(maxSpendCell);
-                
-                // Card cells
                 cards.forEach(card => {
-                    const cashback = category.cashbacks[card.id] || { percent: '', checked: false };
-                    
-                    const cell = document.createElement('td');
-                    cell.className = 'card-cell';
-                    
-                    const cellDiv = document.createElement('div');
-                    cellDiv.className = 'card-input-container';
-                    
-                    const input = document.createElement('input');
-                    input.type = 'text';
-                    input.className = 'percent-input';
-                    input.value = cashback.percent;
-                    input.dataset.categoryId = category.id;
-                    input.dataset.cardId = card.id;
-                    input.placeholder = '0%';
-                    
-                    const checkbox = document.createElement('input');
-                    checkbox.type = 'checkbox';
-                    checkbox.className = 'category-checkbox';
-                    checkbox.checked = cashback.checked;
-                    checkbox.dataset.categoryId = category.id;
-                    checkbox.dataset.cardId = card.id;
-                    
-                    // Add event listeners
-                    input.addEventListener('input', handlePercentInput);
-                    input.addEventListener('blur', () => updateCellStyle(input));
-                    checkbox.addEventListener('change', handleCheckboxChange);
-                    
-                    cellDiv.appendChild(input);
-                    cellDiv.appendChild(checkbox);
-                    cell.appendChild(cellDiv);
-                    
-                    // Apply styling based on value
-                    updateCellStyle(input);
-                    
-                    row.appendChild(cell);
-                });
-                
-                tbody.appendChild(row);
-            });
-        }
-        
-        // Calculate total max spend for a category across all cards
-        function calculateTotalMaxSpend(categoryId) {
-            let totalMaxSpend = 0;
-            let hasValues = false;
-            
-            const category = categories.find(c => c.id === categoryId);
-            if (!category) return '—';
-            
-            cards.forEach(card => {
-                const cashback = category.cashbacks[card.id];
-                if (cashback && cashback.percent) {
-                    const percent = parseFloat(cashback.percent);
-                    if (!isNaN(percent) && percent > 0 && card.limit) {
-                        // Formula: limit / (percent / 100)
-                        const maxSpend = card.limit / (percent / 100);
-                        totalMaxSpend += maxSpend;
-                        hasValues = true;
-                    }
-                }
-            });
-            
-            if (!hasValues) return '—';
-            
-            // Format the total to a nice number
-            return Math.round(totalMaxSpend).toLocaleString('ru-RU');
-        }
-        
-        // Update max spend for all categories
-        function updateAllMaxSpends() {
-            const rows = cashbackTable.querySelectorAll('tbody tr');
-            rows.forEach((row, index) => {
-                const maxSpendCell = row.querySelector('.max-spend-col');
-                const categoryId = categories[index].id;
-                maxSpendCell.textContent = calculateTotalMaxSpend(categoryId);
-            });
-        }
-        
-        // Handle percent input
-        function handlePercentInput(e) {
-            const input = e.target;
-            let value = input.value.replace(/[^0-9.,]/g, '').replace(',', '.');
-            
-            if (value) {
-                // Format as percentage
-                const numValue = parseFloat(value);
-                if (!isNaN(numValue)) {
-                    // Allow typing without auto-formatting
-                    if (value.endsWith('.') || value.endsWith('0')) {
-                        // Keep as is while typing
-                    } else {
-                        // Format nicely if complete
-                        value = numValue.toString();
-                    }
-                }
-            }
-            
-            input.value = value;
-            
-            const categoryId = parseInt(input.dataset.categoryId);
-            const cardId = parseInt(input.dataset.cardId);
-            
-            updateCashbackValue(categoryId, cardId, value);
-            updateCellStyle(input);
-            updateAllMaxSpends();
-        }
-        
-        // Update cashback value in data structure
-        function updateCashbackValue(categoryId, cardId, value) {
-            const category = categories.find(c => c.id === categoryId);
-            if (category) {
-                if (!category.cashbacks) category.cashbacks = {};
-                if (!category.cashbacks[cardId]) category.cashbacks[cardId] = { percent: '', checked: false };
-                
-                category.cashbacks[cardId].percent = value;
-                saveData();
-            }
-        }
-        
-        // Handle checkbox change
-        function handleCheckboxChange(e) {
-            const checkbox = e.target;
-            const categoryId = parseInt(checkbox.dataset.categoryId);
-            const cardId = parseInt(checkbox.dataset.cardId);
-            const checked = checkbox.checked;
-            
-            const card = cards.find(c => c.id === cardId);
-            const currentChecked = countCheckedCategories(cardId);
-            
-            if (checked && currentChecked >= card.maxCategories) {
-                alert(`Достигнуто максимальное количество категорий для карты (${card.maxCategories})`);
-                checkbox.checked = false;
-                return;
-            }
-            
-            updateCashbackChecked(categoryId, cardId, checked);
-            updateCardCounter(cardId);
-            updateProgress();
-        }
-        
-        // Update cashback checked status
-        function updateCashbackChecked(categoryId, cardId, checked) {
-            const category = categories.find(c => c.id === categoryId);
-            if (category) {
-                if (!category.cashbacks) category.cashbacks = {};
-                if (!category.cashbacks[cardId]) category.cashbacks[cardId] = { percent: '', checked: false };
-                
-                category.cashbacks[cardId].checked = checked;
-                saveData();
-            }
-        }
-        
-        // Count checked categories for a card
-        function countCheckedCategories(cardId) {
-            return categories.filter(category => {
-                return category.cashbacks && 
-                       category.cashbacks[cardId] && 
-                       category.cashbacks[cardId].checked;
-            }).length;
-        }
-        
-        // Count filled categories (with at least one checkbox checked)
-        function countFilledCategories() {
-            return categories.filter(category => {
-                return Object.values(category.cashbacks).some(cb => cb.checked);
-            }).length;
-        }
-        
-        // Update card counter
-        function updateCardCounter(cardId) {
-            const card = cards.find(c => c.id === cardId);
-            if (!card) return;
-            
-            const cardIndex = cards.findIndex(c => c.id === cardId);
-            const headerCell = cashbackTable.querySelector(`thead th[data-card-id="${cardId}"]`);
-            if (!headerCell) return;
-            
-            const counter = headerCell.querySelector('.card-counter');
-            if (!counter) return;
-            
-            const checkedCount = countCheckedCategories(cardId);
-            counter.textContent = `${checkedCount}/${card.maxCategories}`;
-            counter.className = `card-counter ${checkedCount === card.maxCategories ? 'text-green-500' : 'text-yellow-500'}`;
-        }
-        
-        // Update progress bar
-        function updateProgress() {
-            const filledCount = countFilledCategories();
-            const totalCount = categories.length;
-            const percentage = totalCount > 0 ? Math.round((filledCount / totalCount) * 100) : 0;
-            
-            progressFill.style.width = `${percentage}%`;
-            progressText.textContent = `Заполнено: ${filledCount} из ${totalCount} категорий (${percentage}%)`;
-            filledCategoriesText.textContent = filledCount > 0 ? `${filledCount} ${getWordForm(filledCount, ['категория', 'категории', 'категорий'])}` : '';
-        }
-        
-        // Get correct word form based on number
-        function getWordForm(number, forms) {
-            let n = Math.abs(number) % 100;
-            let n1 = n % 10;
-            if (n > 10 && n < 20) return forms[2];
-            if (n1 > 1 && n1 < 5) return forms[1];
-            if (n1 === 1) return forms[0];
-            return forms[2];
-        }
-        
-        // Update cell style based on value
-        function updateCellStyle(input) {
-            const cell = input.closest('.card-cell');
-            const categoryId = parseInt(input.dataset.categoryId);
-            const cardId = parseInt(input.dataset.cardId);
-            const value = input.value.trim();
-            
-            // Reset styles
-            cell.classList.remove('best-value', 'worst-value');
-            
-            if (!value) return;
-            
-            // Find values for this category across all cards
-            const categoryValues = [];
-            const category = categories.find(c => c.id === categoryId);
-            
-            if (category && category.cashbacks) {
-                cards.forEach(card => {
-                    if (category.cashbacks[card.id] && category.cashbacks[card.id].percent) {
-                        const percent = parseFloat(category.cashbacks[card.id].percent);
+                    if (category.cashbacks[card.id] && category.cashbacks[card.id].checked) {
+                        const percent = parseFloat(category.cashbacks[card.id].percent || 0);
                         if (!isNaN(percent) && percent > 0) {
-                            categoryValues.push({
-                                cardId: card.id,
-                                percent: percent
-                            });
+                            total += Math.round(card.limit / (percent / 100));
                         }
                     }
                 });
+                
+                return total > 0 ? total.toLocaleString('ru-RU') : '—';
             }
             
-            // Sort by value
-            categoryValues.sort((a, b) => b.percent - a.percent);
-            
-            // Apply styles
-            if (categoryValues.length > 0) {
-                if (categoryValues[0].cardId === cardId) {
-                    cell.classList.add('best-value');
-                } else if (categoryValues[categoryValues.length - 1].cardId === cardId) {
-                    cell.classList.add('worst-value');
+            // Update max spend for a category
+            function updateMaxSpend(categoryId) {
+                const row = Array.from(cashbackTable.querySelectorAll('tbody tr')).find(row => {
+                    const cell = row.querySelector('.category-col');
+                    return cell && cell.querySelector('.edit-btn').dataset.categoryIndex === categories.findIndex(c => c.id === categoryId).toString();
+                });
+                
+                if (row) {
+                    const maxSpendCell = row.querySelector('.max-spend-col');
+                    if (maxSpendCell) {
+                        maxSpendCell.textContent = calculateTotalMaxSpend(categoryId);
+                    }
                 }
             }
-        }
-        
-        // Show the card modal
-        function showCardModal(cardIndex) {
-            editingCardIndex = cardIndex !== undefined ? cardIndex : -1;
             
-            if (editingCardIndex >= 0) {
-                const card = cards[editingCardIndex];
-                cardModalTitle.textContent = 'Редактировать карту';
-                cardName.value = card.name || '';
-                cardLimit.value = card.limit || '';
-                cardMaxCategories.value = card.maxCategories || 5;
-            } else {
-                cardModalTitle.textContent = 'Добавить карту';
-                cardName.value = '';
-                cardLimit.value = '';
-                cardMaxCategories.value = 5;
-            }
-            
-            cardModal.style.display = 'block';
-            cardName.focus();
-        }
-        
-        // Hide the card modal
-        function hideCardModal() {
-            cardModal.style.display = 'none';
-            editingCardIndex = -1;
-        }
-        
-        // Save card
-        function saveCard() {
-            const name = cardName.value.trim();
-            const limit = parseInt(cardLimit.value);
-            const maxCategories = parseInt(cardMaxCategories.value);
-            
-            if (!name) {
-                alert('Введите название карты');
-                return;
-            }
-            
-            if (isNaN(limit) || limit <= 0) {
-                alert('Введите корректный лимит');
-                return;
-            }
-            
-            if (isNaN(maxCategories) || maxCategories < 1 || maxCategories > 10) {
-                alert('Количество категорий должно быть от 1 до 10');
-                return;
-            }
-            
-            if (editingCardIndex >= 0) {
-                // Edit existing card
-                cards[editingCardIndex].name = name;
-                cards[editingCardIndex].limit = limit;
-                cards[editingCardIndex].maxCategories = maxCategories;
-            } else {
-                // Add new card
-                const newId = cards.length > 0 ? Math.max(...cards.map(c => c.id)) + 1 : 1;
-                
-                cards.push({
-                    id: newId,
-                    name: name,
-                    limit: limit,
-                    maxCategories: maxCategories
-                });
-                
-                // Add this card to all categories' cashbacks
+            // Update all max spends
+            function updateAllMaxSpends() {
                 categories.forEach(category => {
-                    if (!category.cashbacks) category.cashbacks = {};
-                    category.cashbacks[newId] = { percent: '', checked: false };
+                    updateMaxSpend(category.id);
                 });
             }
             
-            saveData();
-            hideCardModal();
-            renderTable();
-            updateAllMaxSpends();
-            updateProgress();
-        }
-        
-        // Show the category modal
-        function showCategoryModal(categoryIndex) {
-            editingCategoryIndex = categoryIndex !== undefined ? categoryIndex : -1;
-            
-            if (editingCategoryIndex >= 0) {
-                const category = categories[editingCategoryIndex];
-                categoryModalTitle.textContent = 'Редактировать категорию';
-                categoryName.value = category.name || '';
-                deleteCategoryBtn.style.display = 'block';
-            } else {
-                categoryModalTitle.textContent = 'Добавить категорию';
-                categoryName.value = '';
-                deleteCategoryBtn.style.display = 'none';
+            // Update card counter
+            function updateCardCounter(cardId) {
+                const card = cards.find(c => c.id === cardId);
+                if (!card) return;
+                
+                const cardHeader = cashbackTable.querySelector(`th[data-card-id="${cardId}"]`);
+                if (!cardHeader) return;
+                
+                const counter = cardHeader.querySelector('.card-counter');
+                if (!counter) return;
+                
+                const checkedCount = countCheckedCategories(cardId);
+                counter.textContent = `${checkedCount}/${card.maxCategories}`;
+                counter.className = `card-counter ${checkedCount === card.maxCategories ? 'text-green-500' : 'text-yellow-500'}`;
             }
             
-            categoryModal.style.display = 'block';
-            categoryName.focus();
-        }
-        
-        // Hide the category modal
-        function hideCategoryModal() {
-            categoryModal.style.display = 'none';
-            editingCategoryIndex = -1;
-        }
-        
-        // Save category
-        function saveCategory() {
-            const name = categoryName.value.trim();
-            
-            if (!name) {
-                alert('Введите название категории');
-                return;
+            // Update progress bar
+            function updateProgress() {
+                const filledCount = countFilledCategories();
+                const totalCount = categories.length;
+                const percentage = totalCount > 0 ? Math.round((filledCount / totalCount) * 100) : 0;
+                
+                progressFill.style.width = `${percentage}%`;
+                progressText.textContent = `Заполнено: ${filledCount} из ${totalCount} категорий (${percentage}%)`;
+                filledCategoriesText.textContent = filledCount > 0 ? `${filledCount} ${getWordForm(filledCount, ['категория', 'категории', 'категорий'])}` : '';
             }
             
-            if (editingCategoryIndex >= 0) {
-                // Edit existing category
-                categories[editingCategoryIndex].name = name;
-            } else {
-                // Add new category
-                const newId = categories.length > 0 ? Math.max(...categories.map(c => c.id)) + 1 : 1;
-                
-                const newCategory = {
-                    id: newId,
-                    name: name,
-                    cashbacks: {}
-                };
-                
-                // Initialize cashbacks for each card
-                cards.forEach(card => {
-                    newCategory.cashbacks[card.id] = { percent: '', checked: false };
-                });
-                
-                categories.push(newCategory);
+            // Get correct word form based on number
+            function getWordForm(number, forms) {
+                let n = Math.abs(number) % 100;
+                let n1 = n % 10;
+                if (n > 10 && n < 20) return forms[2];
+                if (n1 > 1 && n1 < 5) return forms[1];
+                if (n1 === 1) return forms[0];
+                return forms[2];
             }
             
-            saveData();
-            hideCategoryModal();
-            renderTable();
-            updateProgress();
-        }
-        
-        // Delete category
-        function deleteCategory() {
-            if (editingCategoryIndex >= 0) {
-                showConfirmModal(
-                    `Вы уверены, что хотите удалить категорию "${categories[editingCategoryIndex].name}"?`,
-                    () => {
-                        categories.splice(editingCategoryIndex, 1);
-                        saveData();
-                        hideCategoryModal();
-                        renderTable();
-                        updateProgress();
+            // Update cell style based on value
+            function updateCellStyle(input) {
+                const cell = input.closest('.card-cell');
+                const categoryId = parseInt(input.dataset.categoryId);
+                const cardId = parseInt(input.dataset.cardId);
+                const value = input.value.trim();
+                
+                // Reset styles
+                cell.classList.remove('best-value', 'worst-value');
+                
+                if (!value) return;
+                
+                // Find values for this category across all cards
+                const categoryValues = [];
+                const category = categories.find(c => c.id === categoryId);
+                
+                if (category && category.cashbacks) {
+                    cards.forEach(card => {
+                        if (category.cashbacks[card.id] && category.cashbacks[card.id].percent) {
+                            const percent = parseFloat(category.cashbacks[card.id].percent);
+                            if (!isNaN(percent) && percent > 0) {
+                                categoryValues.push({
+                                    cardId: card.id,
+                                    percent: percent
+                                });
+                            }
+                        }
+                    });
+                }
+                
+                // Sort by value
+                categoryValues.sort((a, b) => b.percent - a.percent);
+                
+                // Apply styles
+                if (categoryValues.length > 0) {
+                    if (categoryValues[0].cardId === cardId) {
+                        cell.classList.add('best-value');
+                    } else if (categoryValues[categoryValues.length - 1].cardId === cardId) {
+                        cell.classList.add('worst-value');
                     }
+                }
+            }
+            
+            // Show the card modal
+            function showCardModal(cardIndex) {
+                editingCardIndex = cardIndex !== undefined ? cardIndex : -1;
+                
+                if (editingCardIndex >= 0) {
+                    const card = cards[editingCardIndex];
+                    cardModalTitle.textContent = 'Редактировать карту';
+                    cardName.value = card.name || '';
+                    cardLimit.value = card.limit || '';
+                    cardMaxCategories.value = card.maxCategories || 5;
+                } else {
+                    cardModalTitle.textContent = 'Добавить карту';
+                    cardName.value = '';
+                    cardLimit.value = '';
+                    cardMaxCategories.value = 5;
+                }
+                
+                cardModal.style.display = 'block';
+                cardName.focus();
+            }
+            
+            // Hide the card modal
+            function hideCardModal() {
+                cardModal.style.display = 'none';
+                editingCardIndex = -1;
+            }
+            
+            // Save card
+            function saveCard() {
+                const name = cardName.value.trim();
+                const limit = parseInt(cardLimit.value);
+                const maxCategories = parseInt(cardMaxCategories.value);
+                
+                if (!name) {
+                    alert('Введите название карты');
+                    return;
+                }
+                
+                if (isNaN(limit) || limit <= 0) {
+                    alert('Введите корректный лимит');
+                    return;
+                }
+                
+                if (isNaN(maxCategories) || maxCategories < 1 || maxCategories > 10) {
+                    alert('Количество категорий должно быть от 1 до 10');
+                    return;
+                }
+                
+                if (editingCardIndex >= 0) {
+                    // Edit existing card
+                    cards[editingCardIndex].name = name;
+                    cards[editingCardIndex].limit = limit;
+                    cards[editingCardIndex].maxCategories = maxCategories;
+                } else {
+                    // Add new card
+                    const newId = cards.length > 0 ? Math.max(...cards.map(c => c.id)) + 1 : 1;
+                    
+                    cards.push({
+                        id: newId,
+                        name: name,
+                        limit: limit,
+                        maxCategories: maxCategories
+                    });
+                    
+                    // Add this card to all categories' cashbacks
+                    categories.forEach(category => {
+                        if (!category.cashbacks) category.cashbacks = {};
+                        category.cashbacks[newId] = { percent: '', checked: false };
+                    });
+                }
+                
+                saveData();
+                hideCardModal();
+                renderTable();
+                updateAllMaxSpends();
+                updateProgress();
+            }
+            
+            // Show the category modal
+            function showCategoryModal(categoryIndex) {
+                editingCategoryIndex = categoryIndex !== undefined ? categoryIndex : -1;
+                
+                if (editingCategoryIndex >= 0) {
+                    const category = categories[editingCategoryIndex];
+                    categoryModalTitle.textContent = 'Редактировать категорию';
+                    categoryName.value = category.name || '';
+                    deleteCategoryBtn.style.display = 'block';
+                } else {
+                    categoryModalTitle.textContent = 'Добавить категорию';
+                    categoryName.value = '';
+                    deleteCategoryBtn.style.display = 'none';
+                }
+                
+                categoryModal.style.display = 'block';
+                categoryName.focus();
+            }
+            
+            // Hide the category modal
+            function hideCategoryModal() {
+                categoryModal.style.display = 'none';
+                editingCategoryIndex = -1;
+            }
+            
+            // Save category
+            function saveCategory() {
+                const name = categoryName.value.trim();
+                
+                if (!name) {
+                    alert('Введите название категории');
+                    return;
+                }
+                
+                if (editingCategoryIndex >= 0) {
+                    // Edit existing category
+                    categories[editingCategoryIndex].name = name;
+                } else {
+                    // Add new category
+                    const newId = categories.length > 0 ? Math.max(...categories.map(c => c.id)) + 1 : 1;
+                    
+                    const newCategory = {
+                        id: newId,
+                        name: name,
+                        cashbacks: {}
+                    };
+                    
+                    // Initialize cashbacks for each card
+                    cards.forEach(card => {
+                        newCategory.cashbacks[card.id] = { percent: '', checked: false };
+                    });
+                    
+                    categories.push(newCategory);
+                }
+                
+                saveData();
+                hideCategoryModal();
+                renderTable();
+                updateProgress();
+            }
+            
+            // Delete category
+            function deleteCategory() {
+                if (editingCategoryIndex >= 0) {
+                    showConfirmModal(
+                        `Вы уверены, что хотите удалить категорию "${categories[editingCategoryIndex].name}"?`,
+                        () => {
+                            categories.splice(editingCategoryIndex, 1);
+                            saveData();
+                            hideCategoryModal();
+                            renderTable();
+                            updateProgress();
+                        }
+                    );
+                }
+            }
+            
+            // Show confirm modal
+            function showConfirmModal(text, callback) {
+                confirmText.textContent = text;
+                confirmCallback = callback;
+                confirmModal.style.display = 'block';
+            }
+            
+            // Hide confirm modal
+            function hideConfirmModal() {
+                confirmModal.style.display = 'none';
+                confirmCallback = null;
+            }
+            
+            // Execute confirm action
+            function executeConfirmAction() {
+                if (confirmCallback) {
+                    confirmCallback();
+                }
+                hideConfirmModal();
+            }
+            
+            // Confirm clear cashback
+            function confirmClearCashback() {
+                showConfirmModal(
+                    'Вы уверены, что хотите очистить все значения кэшбэка и выбранные категории?',
+                    clearCashbackData
                 );
             }
-        }
-        
-        // Show confirm modal
-        function showConfirmModal(text, callback) {
-            confirmText.textContent = text;
-            confirmCallback = callback;
-            confirmModal.style.display = 'block';
-        }
-        
-        // Hide confirm modal
-        function hideConfirmModal() {
-            confirmModal.style.display = 'none';
-            confirmCallback = null;
-        }
-        
-        // Execute confirm action
-        function executeConfirmAction() {
-            if (confirmCallback) {
-                confirmCallback();
-            }
-            hideConfirmModal();
-        }
-        
-        // Confirm clear cashback
-        function confirmClearCashback() {
-            showConfirmModal(
-                'Вы уверены, что хотите очистить все значения кэшбэка и выбранные категории?',
-                clearCashbackData
-            );
-        }
-        
-        // Clear cashback data
-        function clearCashbackData() {
-            categories.forEach(category => {
-                if (category.cashbacks) {
-                    Object.keys(category.cashbacks).forEach(cardId => {
-                        category.cashbacks[cardId].percent = '';
-                        category.cashbacks[cardId].checked = false;
-                    });
-                }
-            });
             
-            saveData();
-            renderTable();
-            updateAllMaxSpends();
-            updateProgress();
-        }
-        
-        // Filter categories
-        function filterCategories() {
-            const filterValue = filterSelect.value;
-            let sortedCategories = [...categories];
-            
-            switch (filterValue) {
-                case 'alphabetical':
-                    sortedCategories.sort((a, b) => a.name.localeCompare(b.name, 'ru'));
-                    break;
-                case 'alphabetical-reverse':
-                    sortedCategories.sort((a, b) => b.name.localeCompare(a.name, 'ru'));
-                    break;
-                case 'checked-first':
-                    sortedCategories.sort((a, b) => {
-                        const aHasChecked = Object.values(a.cashbacks).some(cb => cb.checked);
-                        const bHasChecked = Object.values(b.cashbacks).some(cb => cb.checked);
-                        if (aHasChecked && !bHasChecked) return -1;
-                        if (!aHasChecked && bHasChecked) return 1;
-                        return a.name.localeCompare(b.name, 'ru');
-                    });
-                    break;
-                case 'checked-last':
-                    sortedCategories.sort((a, b) => {
-                        const aHasChecked = Object.values(a.cashbacks).some(cb => cb.checked);
-                        const bHasChecked = Object.values(b.cashbacks).some(cb => cb.checked);
-                        if (aHasChecked && !bHasChecked) return 1;
-                        if (!aHasChecked && bHasChecked) return -1;
-                        return a.name.localeCompare(b.name, 'ru');
-                    });
-                    break;
-            }
-            
-            categories = sortedCategories;
-            renderTable();
-        }
-        
-        // Toggle theme
-        function toggleTheme() {
-            const isDark = themeToggle.checked;
-            
-            if (isDark) {
-                document.documentElement.classList.add('dark');
-                localStorage.setItem('cashbackTheme', 'dark');
-            } else {
-                document.documentElement.classList.remove('dark');
-                localStorage.setItem('cashbackTheme', 'light');
-            }
-        }
-        
-        // Apply theme from localStorage
-        function applyTheme() {
-            const theme = localStorage.getItem('cashbackTheme') || 'light';
-            themeToggle.checked = theme === 'dark';
-            toggleTheme();
-        }
-        
-        // Drag and drop functionality
-        function handleDragStart(e) {
-            draggedColumn = this;
-            this.classList.add('opacity-50');
-            e.dataTransfer.effectAllowed = 'move';
-            e.dataTransfer.setData('text/html', this.innerHTML);
-        }
-
-        function handleDragOver(e) {
-            if (e.preventDefault) {
-                e.preventDefault();
-            }
-            e.dataTransfer.dropEffect = 'move';
-            return false;
-        }
-
-        function handleDragEnter(e) {
-            this.classList.add('drag-over');
-        }
-
-        function handleDragLeave(e) {
-            this.classList.remove('drag-over');
-        }
-
-        function handleDrop(e) {
-            if (e.stopPropagation) {
-                e.stopPropagation();
-            }
-            
-            if (draggedColumn !== this) {
-                const sourceIndex = parseInt(draggedColumn.dataset.cardIndex);
-                const targetIndex = parseInt(this.dataset.cardIndex);
-                
-                // Reorder cards array
-                const [movedCard] = cards.splice(sourceIndex, 1);
-                cards.splice(targetIndex, 0, movedCard);
+            // Clear cashback data
+            function clearCashbackData() {
+                categories.forEach(category => {
+                    if (category.cashbacks) {
+                        Object.keys(category.cashbacks).forEach(cardId => {
+                            category.cashbacks[cardId].percent = '';
+                            category.cashbacks[cardId].checked = false;
+                        });
+                    }
+                });
                 
                 saveData();
                 renderTable();
+                updateAllMaxSpends();
+                updateProgress();
             }
             
-            return false;
-        }
+            // Filter categories
+            function filterCategories() {
+                const filterValue = filterSelect.value;
+                let sortedCategories = [...categories];
+                
+                switch (filterValue) {
+                    case 'alphabetical':
+                        sortedCategories.sort((a, b) => a.name.localeCompare(b.name, 'ru'));
+                        break;
+                    case 'alphabetical-reverse':
+                        sortedCategories.sort((a, b) => b.name.localeCompare(a.name, 'ru'));
+                        break;
+                    case 'checked-first':
+                        sortedCategories.sort((a, b) => {
+                            const aHasChecked = Object.values(a.cashbacks).some(cb => cb.checked);
+                            const bHasChecked = Object.values(b.cashbacks).some(cb => cb.checked);
+                            if (aHasChecked && !bHasChecked) return -1;
+                            if (!aHasChecked && bHasChecked) return 1;
+                            return a.name.localeCompare(b.name, 'ru');
+                        });
+                        break;
+                    case 'checked-last':
+                        sortedCategories.sort((a, b) => {
+                            const aHasChecked = Object.values(a.cashbacks).some(cb => cb.checked);
+                            const bHasChecked = Object.values(b.cashbacks).some(cb => cb.checked);
+                            if (aHasChecked && !bHasChecked) return 1;
+                            if (!aHasChecked && bHasChecked) return -1;
+                            return a.name.localeCompare(b.name, 'ru');
+                        });
+                        break;
+                }
+                
+                categories = sortedCategories;
+                renderTable();
+            }
+            
+            // Toggle theme
+            function toggleTheme() {
+                const isDark = themeToggle.checked;
+                
+                if (isDark) {
+                    document.documentElement.classList.add('dark');
+                    localStorage.setItem('cashbackTheme', 'dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                    localStorage.setItem('cashbackTheme', 'light');
+                }
+            }
+            
+            // Apply theme from localStorage
+            function applyTheme() {
+                const theme = localStorage.getItem('cashbackTheme') || 'light';
+                themeToggle.checked = theme === 'dark';
+                toggleTheme();
+            }
+            
+            // Drag and drop functionality
+            function handleDragStart(e) {
+                draggedColumn = this;
+                this.classList.add('opacity-50');
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/html', this.innerHTML);
+            }
 
-        function handleDragEnd(e) {
-            document.querySelectorAll('.draggable').forEach(card => {
-                card.classList.remove('opacity-50', 'drag-over');
-            });
-        }
-        
-        // Initialize the application
-        init();
+            function handleDragOver(e) {
+                if (e.preventDefault) {
+                    e.preventDefault();
+                }
+                e.dataTransfer.dropEffect = 'move';
+                return false;
+            }
+
+            function handleDragEnter(e) {
+                this.classList.add('drag-over');
+            }
+
+            function handleDragLeave(e) {
+                this.classList.remove('drag-over');
+            }
+
+            function handleDrop(e) {
+                if (e.stopPropagation) {
+                    e.stopPropagation();
+                }
+                
+                if (draggedColumn !== this) {
+                    const sourceIndex = parseInt(draggedColumn.dataset.cardIndex);
+                    const targetIndex = parseInt(this.dataset.cardIndex);
+                    
+                    // Reorder cards array
+                    const [movedCard] = cards.splice(sourceIndex, 1);
+                    cards.splice(targetIndex, 0, movedCard);
+                    
+                    saveData();
+                    renderTable();
+                }
+                
+                return false;
+            }
+
+            function handleDragEnd(e) {
+                document.querySelectorAll('.draggable').forEach(card => {
+                    card.classList.remove('opacity-50', 'drag-over');
+                });
+            }
+            
+            // Initialize the application
+            init();
+        });
     </script>
 </body>
 </html>
