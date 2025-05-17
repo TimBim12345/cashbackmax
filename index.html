@@ -787,6 +787,7 @@
                 // Add category rows
                 categories.forEach((category, categoryIndex) => {
                     const tr = document.createElement('tr');
+                    tr.dataset.categoryId = category.id;
                     
                     // Category column
                     const categoryCell = document.createElement('td');
@@ -825,14 +826,18 @@
                             input.value = category.cashbacks[card.id].percent || '';
                         }
                         
+                        // ИЗМЕНЕНО: Обновлен обработчик события input для немедленного обновления всей строки
                         input.addEventListener('input', (e) => {
                             const value = e.target.value.trim();
+                            const categoryId = parseInt(e.target.dataset.categoryId);
                             
                             if (category.cashbacks[card.id]) {
                                 category.cashbacks[card.id].percent = value;
                                 saveData();
-                                updateMaxSpend(category.id);
-                                updateCellStyle(input);
+                                updateMaxSpend(categoryId);
+                                
+                                // Немедленно обновляем все ячейки в строке категории
+                                updateAllCellStyles(categoryId);
                             }
                         });
                         
@@ -846,8 +851,10 @@
                             checkbox.checked = category.cashbacks[card.id].checked || false;
                         }
                         
+                        // ИЗМЕНЕНО: Обновлен обработчик события change для немедленного обновления всей строки
                         checkbox.addEventListener('change', (e) => {
                             const checked = e.target.checked;
+                            const categoryId = parseInt(e.target.dataset.categoryId);
                             
                             if (checked) {
                                 // Check if max categories reached
@@ -865,10 +872,11 @@
                                 category.cashbacks[card.id].checked = checked;
                                 saveData();
                                 updateCardCounter(card.id);
-                                updateMaxSpend(category.id);
+                                updateMaxSpend(categoryId);
                                 updateProgress();
-                                // Добавлено: обновление индикаторов при изменении чекбокса
-                                updateAllCellStyles(category.id);
+                                
+                                // Немедленно обновляем все ячейки в строке категории
+                                updateAllCellStyles(categoryId);
                             }
                         });
                         
@@ -922,9 +930,7 @@
             // Update max spend for a category
             function updateMaxSpend(categoryId) {
                 const row = Array.from(cashbackTable.querySelectorAll('tbody tr')).find(row => {
-                    const cell = row.querySelector('.category-col');
-                    const editBtn = cell.querySelector('.edit-btn');
-                    return editBtn && parseInt(editBtn.dataset.categoryIndex) === categories.findIndex(c => c.id === categoryId);
+                    return row.dataset.categoryId == categoryId;
                 });
                 
                 if (row) {
@@ -979,7 +985,7 @@
                 return forms[2];
             }
             
-            // Обновить все ячейки в категории
+            // ИЗМЕНЕНО: Полностью переработана функция обновления стилей ячеек в категории
             function updateAllCellStyles(categoryId) {
                 const category = categories.find(c => c.id === categoryId);
                 if (!category || !category.cashbacks) return;
@@ -999,34 +1005,37 @@
                     }
                 });
                 
-                // Сортировка по значению
-                categoryValues.sort((a, b) => b.percent - a.percent);
+                if (categoryValues.length === 0) {
+                    // Если нет значений, очищаем все стили в строке
+                    clearRowStyles(categoryId);
+                    return;
+                }
                 
-                if (categoryValues.length === 0) return;
+                // Сортировка по значению (от большего к меньшему)
+                categoryValues.sort((a, b) => b.percent - a.percent);
                 
                 // Найти максимальное и минимальное значение
                 const maxPercent = categoryValues[0].percent;
                 const minPercent = categoryValues[categoryValues.length - 1].percent;
                 
-                // Получить все ячейки для этой категории
+                // Получить строку для этой категории
                 const row = Array.from(cashbackTable.querySelectorAll('tbody tr')).find(row => {
-                    const cell = row.querySelector('.category-col');
-                    const editBtn = cell.querySelector('.edit-btn');
-                    return editBtn && parseInt(editBtn.dataset.categoryIndex) === categories.findIndex(c => c.id === categoryId);
+                    return row.dataset.categoryId == categoryId;
                 });
                 
                 if (!row) return;
                 
-                // Обновить стили для всех ячеек в этой категории
+                // Сначала очищаем все стили в строке
                 const cells = row.querySelectorAll('.card-cell');
                 cells.forEach(cell => {
-                    // Сбросить стили
                     cell.classList.remove('best-value', 'worst-value');
-                    
+                });
+                
+                // Затем применяем новые стили
+                cells.forEach(cell => {
                     const input = cell.querySelector('.percent-input');
                     if (!input) return;
                     
-                    const cardId = parseInt(input.dataset.cardId);
                     const value = parseFloat(input.value.trim());
                     
                     if (!isNaN(value) && value > 0) {
@@ -1034,11 +1043,25 @@
                         if (value === maxPercent) {
                             cell.classList.add('best-value');
                         }
-                        // Применить стили для минимального значения
+                        // Применить стили для минимального значения если есть хотя бы два разных значения
                         else if (value === minPercent && maxPercent !== minPercent) {
                             cell.classList.add('worst-value');
                         }
                     }
+                });
+            }
+            
+            // ДОБАВЛЕНО: Функция для очистки всех стилей в строке категории
+            function clearRowStyles(categoryId) {
+                const row = Array.from(cashbackTable.querySelectorAll('tbody tr')).find(row => {
+                    return row.dataset.categoryId == categoryId;
+                });
+                
+                if (!row) return;
+                
+                const cells = row.querySelectorAll('.card-cell');
+                cells.forEach(cell => {
+                    cell.classList.remove('best-value', 'worst-value');
                 });
             }
             
@@ -1049,11 +1072,7 @@
                 });
             }
             
-            // Update cell style based on value
-            function updateCellStyle(input) {
-                const categoryId = parseInt(input.dataset.categoryId);
-                updateAllCellStyles(categoryId);
-            }
+            // УДАЛЕНО: Функция updateCellStyle больше не используется, так как теперь всегда обновляется вся строка
             
             // Show the card modal
             function showCardModal(cardIndex) {
