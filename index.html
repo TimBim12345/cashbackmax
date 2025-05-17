@@ -553,14 +553,14 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button id="cancelCategoryBtn" class="btn btn-secondary">Отмена</button>
                 <button id="deleteCategoryBtn" class="btn btn-danger" style="display: none;">Удалить</button>
+                <button id="cancelCategoryBtn" class="btn btn-secondary">Отмена</button>
                 <button id="saveCategoryBtn" class="btn btn-primary">Сохранить</button>
             </div>
         </div>
     </div>
     
-    <!-- Confirmation Modal -->
+    <!-- Confirm Modal -->
     <div id="confirmModal" class="modal-overlay">
         <div class="modal">
             <div class="modal-header">
@@ -568,7 +568,7 @@
                 <span class="modal-close" id="closeConfirmModal">&times;</span>
             </div>
             <div class="modal-body">
-                <p id="confirmText">Вы уверены, что хотите выполнить это действие?</p>
+                <p id="confirmText"></p>
             </div>
             <div class="modal-footer">
                 <button id="cancelConfirmBtn" class="btn btn-secondary">Отмена</button>
@@ -578,24 +578,18 @@
     </div>
     
     <script>
-        // Дождемся полной загрузки DOM перед инициализацией приложения
         document.addEventListener('DOMContentLoaded', function() {
-            // Data structure
-            let cards = [];
-            let categories = [];
-            
             // DOM Elements
             const cashbackTable = document.getElementById('cashbackTable');
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
+            const filledCategoriesText = document.getElementById('filledCategoriesText');
             const addCardBtn = document.getElementById('addCardBtn');
             const addCategoryBtn = document.getElementById('addCategoryBtn');
             const clearBtn = document.getElementById('clearBtn');
             const filterSelect = document.getElementById('filterSelect');
             const themeToggle = document.getElementById('themeToggle');
-            const progressFill = document.getElementById('progressFill');
-            const progressText = document.getElementById('progressText');
-            const filledCategoriesText = document.getElementById('filledCategoriesText');
             
-            // Modal Elements
             const cardModal = document.getElementById('cardModal');
             const cardModalTitle = document.getElementById('cardModalTitle');
             const cardName = document.getElementById('cardName');
@@ -644,6 +638,8 @@
                 renderTable();
                 updateProgress();
                 applyTheme();
+                // Добавлено: обновление всех индикаторов после инициализации
+                updateAllCategoriesIndicators();
             }
             
             // Initialize event listeners
@@ -702,32 +698,18 @@
                             name: name,
                             cashbacks: {}
                         }));
-                    }
-                    
-                    // Ensure each category has proper cashback structure
-                    categories.forEach(category => {
-                        if (!category.cashbacks) {
-                            category.cashbacks = {};
-                        }
                         
-                        // Make sure all cards are represented in cashbacks
-                        cards.forEach(card => {
-                            if (category.cashbacks[card.id] === undefined) {
-                                category.cashbacks[card.id] = {
-                                    percent: '',
-                                    checked: false
-                                };
-                            }
+                        // Initialize cashbacks for each card
+                        categories.forEach(category => {
+                            cards.forEach(card => {
+                                category.cashbacks[card.id] = { percent: '', checked: false };
+                            });
                         });
-                    });
+                    }
                 } catch (error) {
                     console.error('Error loading data:', error);
                     cards = [{ id: 1, name: 'Карта 1', limit: 5000, maxCategories: 5 }];
-                    categories = defaultCategories.map((name, index) => ({
-                        id: index + 1,
-                        name: name,
-                        cashbacks: { '1': { percent: '', checked: false } }
-                    }));
+                    categories = [];
                 }
             }
             
@@ -738,165 +720,169 @@
                     localStorage.setItem('cashbackCategories', JSON.stringify(categories));
                 } catch (error) {
                     console.error('Error saving data:', error);
-                    alert('Ошибка при сохранении данных. Попробуйте очистить кэш браузера.');
                 }
             }
             
             // Render the table
             function renderTable() {
-                // Clear existing table content (except header row)
-                const headerRow = cashbackTable.querySelector('thead tr');
-                headerRow.innerHTML = `
-                    <th class="category-col">Категория</th>
-                    <th class="max-spend-col">Макс. расход, ₽</th>
-                `;
-                
-                // Add card headers
-                cards.forEach((card, index) => {
-                    const cardHeader = document.createElement('th');
-                    cardHeader.className = 'card-cell draggable';
-                    cardHeader.dataset.cardId = card.id;
-                    cardHeader.dataset.cardIndex = index;
-                    cardHeader.draggable = true;
-                    
-                    const checkedCount = countCheckedCategories(card.id);
-                    const counterClass = checkedCount === card.maxCategories ? 'text-green-500' : 'text-yellow-500';
-                    
-                    cardHeader.innerHTML = `
-                        <div class="card-header">
-                            <div class="text-truncate" title="${card.name}">${card.name}</div>
-                            <div class="limit">${card.limit}₽</div>
-                            <div class="card-counter ${counterClass}">${checkedCount}/${card.maxCategories}</div>
-                            <i class="fas fa-edit edit-btn" data-card-index="${index}"></i>
-                        </div>
-                    `;
-                    
-                    headerRow.appendChild(cardHeader);
-                    
-                    // Add drag and drop event listeners
-                    cardHeader.addEventListener('dragstart', handleDragStart);
-                    cardHeader.addEventListener('dragover', handleDragOver);
-                    cardHeader.addEventListener('dragenter', handleDragEnter);
-                    cardHeader.addEventListener('dragleave', handleDragLeave);
-                    cardHeader.addEventListener('drop', handleDrop);
-                    cardHeader.addEventListener('dragend', handleDragEnd);
-                    
-                    // Add edit button event listener
-                    cardHeader.querySelector('.edit-btn').addEventListener('click', (e) => {
-                        const cardIndex = parseInt(e.target.dataset.cardIndex);
-                        showCardModal(cardIndex);
-                        e.stopPropagation(); // Prevent triggering drag start
-                    });
-                });
-                
-                // Clear table body
+                // Clear existing table
+                const thead = cashbackTable.querySelector('thead tr');
                 const tbody = cashbackTable.querySelector('tbody');
+                
+                // Clear all rows except the first column
+                while (thead.children.length > 2) {
+                    thead.removeChild(thead.lastChild);
+                }
+                
                 tbody.innerHTML = '';
                 
-                // Add category rows
-                categories.forEach((category, catIndex) => {
-                    const row = document.createElement('tr');
+                // Add card columns
+                cards.forEach((card, index) => {
+                    const th = document.createElement('th');
+                    th.dataset.cardId = card.id;
+                    th.dataset.cardIndex = index;
+                    th.className = 'draggable';
+                    th.draggable = true;
                     
-                    // Category name cell
+                    // Add drag and drop event listeners
+                    th.addEventListener('dragstart', handleDragStart);
+                    th.addEventListener('dragover', handleDragOver);
+                    th.addEventListener('dragenter', handleDragEnter);
+                    th.addEventListener('dragleave', handleDragLeave);
+                    th.addEventListener('drop', handleDrop);
+                    th.addEventListener('dragend', handleDragEnd);
+                    
+                    const cardHeader = document.createElement('div');
+                    cardHeader.className = 'card-header';
+                    
+                    const cardName = document.createElement('div');
+                    cardName.className = 'text-truncate';
+                    cardName.textContent = card.name;
+                    cardName.title = card.name;
+                    
+                    const cardLimit = document.createElement('div');
+                    cardLimit.className = 'limit';
+                    cardLimit.textContent = `${card.limit.toLocaleString('ru-RU')}₽`;
+                    
+                    const cardCounter = document.createElement('div');
+                    cardCounter.className = 'card-counter';
+                    const checkedCount = countCheckedCategories(card.id);
+                    cardCounter.textContent = `${checkedCount}/${card.maxCategories}`;
+                    cardCounter.className = `card-counter ${checkedCount === card.maxCategories ? 'text-green-500' : 'text-yellow-500'}`;
+                    
+                    const editBtn = document.createElement('i');
+                    editBtn.className = 'fas fa-edit edit-btn';
+                    editBtn.dataset.cardIndex = index;
+                    editBtn.addEventListener('click', () => showCardModal(index));
+                    
+                    cardHeader.appendChild(cardName);
+                    cardHeader.appendChild(cardLimit);
+                    cardHeader.appendChild(cardCounter);
+                    cardHeader.appendChild(editBtn);
+                    
+                    th.appendChild(cardHeader);
+                    thead.appendChild(th);
+                });
+                
+                // Add category rows
+                categories.forEach((category, categoryIndex) => {
+                    const tr = document.createElement('tr');
+                    
+                    // Category column
                     const categoryCell = document.createElement('td');
                     categoryCell.className = 'category-col';
-                    categoryCell.title = category.name;
-                    categoryCell.innerHTML = `
-                        <div class="flex justify-between items-center">
-                            <span class="text-truncate">${category.name}</span>
-                            <i class="fas fa-edit edit-btn" data-category-index="${catIndex}"></i>
-                        </div>
-                    `;
-                    row.appendChild(categoryCell);
+                    categoryCell.textContent = category.name;
                     
-                    categoryCell.querySelector('.edit-btn').addEventListener('click', () => {
-                        showCategoryModal(catIndex);
-                    });
+                    const editBtn = document.createElement('i');
+                    editBtn.className = 'fas fa-edit edit-btn';
+                    editBtn.dataset.categoryIndex = categoryIndex;
+                    editBtn.addEventListener('click', () => showCategoryModal(categoryIndex));
                     
-                    // Max spend cell
+                    categoryCell.appendChild(editBtn);
+                    tr.appendChild(categoryCell);
+                    
+                    // Max spend column
                     const maxSpendCell = document.createElement('td');
                     maxSpendCell.className = 'max-spend-col';
                     maxSpendCell.textContent = calculateTotalMaxSpend(category.id);
-                    row.appendChild(maxSpendCell);
+                    tr.appendChild(maxSpendCell);
                     
                     // Card cells
                     cards.forEach(card => {
-                        const cashback = category.cashbacks[card.id] || { percent: '', checked: false };
+                        const td = document.createElement('td');
+                        td.className = 'card-cell';
                         
-                        const cell = document.createElement('td');
-                        cell.className = 'card-cell';
-                        
-                        const cellDiv = document.createElement('div');
-                        cellDiv.className = 'card-input-container';
+                        const inputContainer = document.createElement('div');
+                        inputContainer.className = 'card-input-container';
                         
                         const input = document.createElement('input');
-                        input.type = 'text';
                         input.className = 'percent-input';
-                        input.value = cashback.percent;
                         input.placeholder = '0%';
-                        input.dataset.categoryId = category.id;
                         input.dataset.cardId = card.id;
+                        input.dataset.categoryId = category.id;
+                        
+                        if (category.cashbacks[card.id]) {
+                            input.value = category.cashbacks[card.id].percent || '';
+                        }
+                        
+                        input.addEventListener('input', (e) => {
+                            const value = e.target.value.trim();
+                            
+                            if (category.cashbacks[card.id]) {
+                                category.cashbacks[card.id].percent = value;
+                                saveData();
+                                updateMaxSpend(category.id);
+                                updateCellStyle(input);
+                            }
+                        });
                         
                         const checkbox = document.createElement('input');
                         checkbox.type = 'checkbox';
                         checkbox.className = 'category-checkbox';
-                        checkbox.checked = cashback.checked;
-                        checkbox.dataset.categoryId = category.id;
                         checkbox.dataset.cardId = card.id;
+                        checkbox.dataset.categoryId = category.id;
                         
-                        cellDiv.appendChild(input);
-                        cellDiv.appendChild(checkbox);
-                        cell.appendChild(cellDiv);
-                        row.appendChild(cell);
-                        
-                        // Add event listeners
-                        input.addEventListener('input', (e) => {
-                            const value = e.target.value.replace(/[^0-9.]/g, '');
-                            e.target.value = value;
-                            
-                            const categoryId = parseInt(e.target.dataset.categoryId);
-                            const cardId = parseInt(e.target.dataset.cardId);
-                            
-                            const category = categories.find(c => c.id === categoryId);
-                            if (category && category.cashbacks[cardId]) {
-                                category.cashbacks[cardId].percent = value;
-                                saveData();
-                                updateAllCellStyles(categoryId); // Обновляем все ячейки в категории
-                                updateMaxSpend(categoryId);
-                                updateProgress();
-                            }
-                        });
+                        if (category.cashbacks[card.id]) {
+                            checkbox.checked = category.cashbacks[card.id].checked || false;
+                        }
                         
                         checkbox.addEventListener('change', (e) => {
-                            const categoryId = parseInt(e.target.dataset.categoryId);
-                            const cardId = parseInt(e.target.dataset.cardId);
+                            const checked = e.target.checked;
                             
-                            const category = categories.find(c => c.id === categoryId);
-                            if (category && category.cashbacks[cardId]) {
-                                // Проверка на максимальное количество отмеченных категорий
-                                const card = cards.find(c => c.id === cardId);
-                                const checkedCount = countCheckedCategories(cardId);
+                            if (checked) {
+                                // Check if max categories reached
+                                const checkedCount = countCheckedCategories(card.id);
+                                const maxCategories = card.maxCategories;
                                 
-                                if (e.target.checked && checkedCount >= card.maxCategories) {
-                                    alert(`Для карты "${card.name}" можно выбрать максимум ${card.maxCategories} категорий`);
+                                if (checkedCount >= maxCategories) {
                                     e.target.checked = false;
+                                    alert(`Достигнуто максимальное количество категорий (${maxCategories}) для карты "${card.name}"`);
                                     return;
                                 }
-                                
-                                category.cashbacks[cardId].checked = e.target.checked;
+                            }
+                            
+                            if (category.cashbacks[card.id]) {
+                                category.cashbacks[card.id].checked = checked;
                                 saveData();
-                                updateCardCounter(cardId);
-                                updateMaxSpend(categoryId); // Добавлено обновление расчета при изменении чекбокса
+                                updateCardCounter(card.id);
+                                updateMaxSpend(category.id);
                                 updateProgress();
+                                // Добавлено: обновление индикаторов при изменении чекбокса
+                                updateAllCellStyles(category.id);
                             }
                         });
                         
-                        // Apply styles based on value
-                        updateCellStyle(input);
+                        inputContainer.appendChild(input);
+                        inputContainer.appendChild(checkbox);
+                        td.appendChild(inputContainer);
+                        tr.appendChild(td);
                     });
                     
-                    tbody.appendChild(row);
+                    tbody.appendChild(tr);
                 });
+                
+                // Добавлено: обновление всех индикаторов после рендеринга таблицы
+                setTimeout(updateAllCategoriesIndicators, 0);
             }
             
             // Count checked categories for a card
@@ -1056,6 +1042,13 @@
                 });
             }
             
+            // Обновить все индикаторы для всех категорий
+            function updateAllCategoriesIndicators() {
+                categories.forEach(category => {
+                    updateAllCellStyles(category.id);
+                });
+            }
+            
             // Update cell style based on value
             function updateCellStyle(input) {
                 const categoryId = parseInt(input.dataset.categoryId);
@@ -1138,6 +1131,8 @@
                 renderTable();
                 updateAllMaxSpends();
                 updateProgress();
+                // Добавлено: обновление всех индикаторов после сохранения карты
+                updateAllCategoriesIndicators();
             }
             
             // Show the category modal
@@ -1199,6 +1194,8 @@
                 hideCategoryModal();
                 renderTable();
                 updateProgress();
+                // Добавлено: обновление всех индикаторов после сохранения категории
+                updateAllCategoriesIndicators();
             }
             
             // Delete category
@@ -1212,6 +1209,8 @@
                             hideCategoryModal();
                             renderTable();
                             updateProgress();
+                            // Добавлено: обновление всех индикаторов после удаления категории
+                            updateAllCategoriesIndicators();
                         }
                     );
                 }
@@ -1261,6 +1260,8 @@
                 renderTable();
                 updateAllMaxSpends();
                 updateProgress();
+                // Добавлено: обновление всех индикаторов после очистки данных
+                updateAllCategoriesIndicators();
             }
             
             // Filter categories
@@ -1297,6 +1298,8 @@
                 
                 categories = sortedCategories;
                 renderTable();
+                // Добавлено: обновление всех индикаторов после фильтрации
+                updateAllCategoriesIndicators();
             }
             
             // Toggle theme
@@ -1358,6 +1361,8 @@
                     
                     saveData();
                     renderTable();
+                    // Добавлено: обновление всех индикаторов после перетаскивания
+                    updateAllCategoriesIndicators();
                 }
                 
                 return false;
