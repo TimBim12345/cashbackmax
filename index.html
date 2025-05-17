@@ -164,11 +164,11 @@
         }
 
         .best-value {
-            background-color: rgba(0, 255, 0, 0.25);
+            background-color: rgba(16, 185, 129, 0.1);
         }
 
         .worst-value {
-            background-color: rgba(255, 0, 0, 0.25);
+            background-color: rgba(239, 68, 68, 0.05);
         }
 
         .btn {
@@ -861,7 +861,7 @@
                             if (category && category.cashbacks[cardId]) {
                                 category.cashbacks[cardId].percent = value;
                                 saveData();
-                                updateCellStyle(e.target);
+                                updateAllCellStyles(categoryId); // Обновляем все ячейки в категории
                                 updateMaxSpend(categoryId);
                                 updateProgress();
                             }
@@ -993,47 +993,73 @@
                 return forms[2];
             }
             
-            // Update cell style based on value
-            function updateCellStyle(input) {
-                const cell = input.closest('.card-cell');
-                const categoryId = parseInt(input.dataset.categoryId);
-                const cardId = parseInt(input.dataset.cardId);
-                const value = input.value.trim();
-                
-                // Reset styles
-                cell.classList.remove('best-value', 'worst-value');
-                
-                if (!value) return;
-                
-                // Find values for this category across all cards
-                const categoryValues = [];
+            // Обновить все ячейки в категории
+            function updateAllCellStyles(categoryId) {
                 const category = categories.find(c => c.id === categoryId);
+                if (!category || !category.cashbacks) return;
                 
-                if (category && category.cashbacks) {
-                    cards.forEach(card => {
-                        if (category.cashbacks[card.id] && category.cashbacks[card.id].percent) {
-                            const percent = parseFloat(category.cashbacks[card.id].percent);
-                            if (!isNaN(percent) && percent > 0) {
-                                categoryValues.push({
-                                    cardId: card.id,
-                                    percent: percent
-                                });
-                            }
+                // Найти все значения для этой категории
+                const categoryValues = [];
+                
+                cards.forEach(card => {
+                    if (category.cashbacks[card.id] && category.cashbacks[card.id].percent) {
+                        const percent = parseFloat(category.cashbacks[card.id].percent);
+                        if (!isNaN(percent) && percent > 0) {
+                            categoryValues.push({
+                                cardId: card.id,
+                                percent: percent
+                            });
                         }
-                    });
-                }
+                    }
+                });
                 
-                // Sort by value
+                // Сортировка по значению
                 categoryValues.sort((a, b) => b.percent - a.percent);
                 
-                // Apply styles
-                if (categoryValues.length > 0) {
-                    if (categoryValues[0].cardId === cardId) {
-                        cell.classList.add('best-value');
-                    } else if (categoryValues[categoryValues.length - 1].cardId === cardId) {
-                        cell.classList.add('worst-value');
+                if (categoryValues.length === 0) return;
+                
+                // Найти максимальное и минимальное значение
+                const maxPercent = categoryValues[0].percent;
+                const minPercent = categoryValues[categoryValues.length - 1].percent;
+                
+                // Получить все ячейки для этой категории
+                const row = Array.from(cashbackTable.querySelectorAll('tbody tr')).find(row => {
+                    const cell = row.querySelector('.category-col');
+                    const editBtn = cell.querySelector('.edit-btn');
+                    return editBtn && parseInt(editBtn.dataset.categoryIndex) === categories.findIndex(c => c.id === categoryId);
+                });
+                
+                if (!row) return;
+                
+                // Обновить стили для всех ячеек в этой категории
+                const cells = row.querySelectorAll('.card-cell');
+                cells.forEach(cell => {
+                    // Сбросить стили
+                    cell.classList.remove('best-value', 'worst-value');
+                    
+                    const input = cell.querySelector('.percent-input');
+                    if (!input) return;
+                    
+                    const cardId = parseInt(input.dataset.cardId);
+                    const value = parseFloat(input.value.trim());
+                    
+                    if (!isNaN(value) && value > 0) {
+                        // Применить стили для максимального значения
+                        if (value === maxPercent) {
+                            cell.classList.add('best-value');
+                        }
+                        // Применить стили для минимального значения
+                        else if (value === minPercent && maxPercent !== minPercent) {
+                            cell.classList.add('worst-value');
+                        }
                     }
-                }
+                });
+            }
+            
+            // Update cell style based on value
+            function updateCellStyle(input) {
+                const categoryId = parseInt(input.dataset.categoryId);
+                updateAllCellStyles(categoryId);
             }
             
             // Show the card modal
